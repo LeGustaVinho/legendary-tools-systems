@@ -1,0 +1,16 @@
+{
+    "name": "LegendaryTools.Systems",
+    "references": [
+        "GUID:1b3f41bcd77ed7243baafc0c2584b1df",
+        "GUID:2247f345c1389cb428906dc038800b93"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
