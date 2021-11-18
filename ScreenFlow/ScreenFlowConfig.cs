@@ -26,7 +26,7 @@ namespace LegendaryTools.Systems.ScreenFlow
         DestroyAllThenTransit,
     }
 
-    [CreateAssetMenu(menuName = "CustomTools/ScreenFlow/ScreenFlowConfig")]
+    [CreateAssetMenu(menuName = "Tools/ScreenFlow/ScreenFlowConfig")]
     public class ScreenFlowConfig : ScriptableObject
     {
         public ScreenConfig[] Screens;

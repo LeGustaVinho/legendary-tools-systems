@@ -17,8 +17,6 @@ namespace LegendaryTools.Systems.ScreenFlow
         
         public bool IsInScene { private set; get; } //Flag used to identify that this screen does not need load/unload because it is serialized in the scene
 
-        public Transform HardReferenceTransform;
-        
         public ScreenBase LoadedScreen => loadedScreen;
 
         public bool IsLoaded => loadedScreen != null;

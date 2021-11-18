@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace LegendaryTools.Systems.ScreenFlow
 {
-    [CreateAssetMenu(menuName = "CustomTools/ScreenFlow/ResourcesAssetProvider")]
+    [CreateAssetMenu(menuName = "Tools/ScreenFlow/ResourcesAssetProvider")]
     public class ResourcesAssetProvider : AssetProvider
     {
         public override T Load<T>(string[] args)

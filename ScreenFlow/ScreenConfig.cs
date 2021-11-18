@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace LegendaryTools.Systems.ScreenFlow
 {
-    [CreateAssetMenu(menuName = "CustomTools/ScreenFlow/ScreenConfig")]
+    [CreateAssetMenu(menuName = "Tools/ScreenFlow/ScreenConfig")]
     public class ScreenConfig : UIEntityBaseConfig
     {
         [Header("Popups")] public bool AllowPopups;
