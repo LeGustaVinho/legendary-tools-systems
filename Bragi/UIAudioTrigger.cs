@@ -12,21 +12,18 @@ namespace LegendaryTools.Bragi
         PointerExit,
         PointerUp,
         PointDown,
-        
+
         Submit,
         Select,
-        
+
         BeginDrag,
         Drag,
         Drop,
         EndDrag,
-        
+
         TriggerEnter,
         TriggerStay,
         TriggerExit,
-        
-        Animator, //TODO
-        Animation, //TODO
         
         Custom
     }
@@ -46,17 +43,23 @@ namespace LegendaryTools.Bragi
         public AudioConfigBase Config;
         public string Custom;
     }
-    
-    public class UIAudioTrigger : MonoBehaviour, 
+
+    public class UIAudioTrigger : MonoBehaviour,
         IPointerClickHandler, IPointerEnterHandler, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler,
         IBeginDragHandler, IDragHandler, IDropHandler, IEndDragHandler,
         ISelectHandler, ISubmitHandler
     {
         public AudioConfigTrigger[] AudioConfigTriggers;
-        
-        private Dictionary<AudioTriggerType, List<AudioConfigTrigger>> audioConfigTriggerTable = new Dictionary<AudioTriggerType, List<AudioConfigTrigger>>();
-        private Dictionary<AudioTriggerType, AudioConfigTrigger> customAudioConfigTriggerTable = new Dictionary<AudioTriggerType, AudioConfigTrigger>();
-        
+        public bool PreventParallelAudios = true;
+
+        private readonly Dictionary<AudioTriggerType, List<AudioConfigTrigger>> audioConfigTriggerTable =
+            new Dictionary<AudioTriggerType, List<AudioConfigTrigger>>();
+
+        private readonly Dictionary<string, AudioConfigTrigger> customAudioConfigTriggerTable =
+            new Dictionary<string, AudioConfigTrigger>();
+
+        private readonly List<AudioHandler> currentHandlers = new List<AudioHandler>();
+
         public void OnPointerClick(PointerEventData eventData)
         {
             ProcessTrigger(AudioTriggerType.PointerClick);
@@ -116,12 +119,12 @@ namespace LegendaryTools.Bragi
         {
             ProcessTrigger(AudioTriggerType.TriggerEnter);
         }
-        
+
         public virtual void OnTriggerStay(Collider collider)
         {
             ProcessTrigger(AudioTriggerType.TriggerStay);
         }
-        
+
         public virtual void OnTriggerExit(Collider collider)
         {
             ProcessTrigger(AudioTriggerType.TriggerExit);
@@ -139,39 +142,44 @@ namespace LegendaryTools.Bragi
 
         private void Initialize()
         {
+            audioConfigTriggerTable.Clear();
+            customAudioConfigTriggerTable.Clear();
+            
             foreach (AudioConfigTrigger audioConfigTrigger in AudioConfigTriggers)
             {
                 if (!audioConfigTriggerTable.ContainsKey(audioConfigTrigger.TriggerType))
                 {
                     audioConfigTriggerTable.Add(audioConfigTrigger.TriggerType, new List<AudioConfigTrigger>());
                 }
-                
+
                 audioConfigTriggerTable[audioConfigTrigger.TriggerType].Add(audioConfigTrigger);
 
                 if (audioConfigTrigger.TriggerType == AudioTriggerType.Custom)
                 {
-                    
+                    if (!customAudioConfigTriggerTable.ContainsKey(audioConfigTrigger.Custom))
+                    {
+                        customAudioConfigTriggerTable.Add(audioConfigTrigger.Custom, audioConfigTrigger);
+                    }
                 }
             }
         }
 
         protected virtual void ProcessTrigger(AudioTriggerType triggerType, string customString = "")
         {
-            if (audioConfigTriggerTable.TryGetValue(triggerType, out List<AudioConfigTrigger> audioConfigTriggers))
+            if (triggerType == AudioTriggerType.Custom && !string.IsNullOrEmpty(customString))
             {
-                if (string.IsNullOrEmpty(customString))
+                if (customAudioConfigTriggerTable.TryGetValue(customString, out AudioConfigTrigger audioConfigTrigger))
+                {
+                    Play(audioConfigTrigger);
+                }
+            }
+            else
+            {
+                if (audioConfigTriggerTable.TryGetValue(triggerType, out List<AudioConfigTrigger> audioConfigTriggers))
                 {
                     foreach (AudioConfigTrigger audioConfigTrigger in audioConfigTriggers)
                     {
                         Play(audioConfigTrigger);
-                    }
-                }
-                else
-                {
-                    int index = audioConfigTriggers.FindIndex(item => item.Custom == customString);
-                    if (index >= 0)
-                    {
-                        Play(audioConfigTriggers[index]);
                     }
                 }
             }
@@ -179,18 +187,41 @@ namespace LegendaryTools.Bragi
 
         protected void Play(AudioConfigTrigger audioConfigTrigger)
         {
+            if (PreventParallelAudios)
+            {
+                for (int index = currentHandlers.Count - 1; index >= 0; index--)
+                {
+                    AudioHandler handler = currentHandlers[index];
+                    if (handler.IsPlaying)
+                    {
+                        handler.StopNow();
+                    }
+                }
+            }
+            
             switch (audioConfigTrigger.PlayMode)
             {
                 case AudioTriggerPlayMode.Default:
-                    audioConfigTrigger.Config.Play();
+                    currentHandlers.AddRange(audioConfigTrigger.Config.Play());
                     break;
                 case AudioTriggerPlayMode.PlayAtThisLocation:
-                    audioConfigTrigger.Config.Play(transform.position);
+                    currentHandlers.AddRange(audioConfigTrigger.Config.Play(transform.position));
                     break;
                 case AudioTriggerPlayMode.PlayAndParent:
-                    audioConfigTrigger.Config.Play(transform);
+                    currentHandlers.AddRange(audioConfigTrigger.Config.Play(transform));
                     break;
             }
+
+            foreach (AudioHandler handler in currentHandlers)
+            {
+                handler.OnDispose += OnHandlerDisposed;
+            }
+        }
+
+        private void OnHandlerDisposed(AudioHandler handler)
+        {
+            handler.OnDispose -= OnHandlerDisposed;
+            currentHandlers.Remove(handler);
         }
     }
 }

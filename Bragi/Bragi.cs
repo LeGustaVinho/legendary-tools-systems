@@ -41,12 +41,13 @@ namespace LegendaryTools.Bragi
         {
             switch (playMode)
             {
-                case AudioGroupPlayMode.Sequential: return new[] {audioGroup.PlaySequence(overrideSettings)};
+                case AudioGroupPlayMode.Sequential: return new[] {audioGroup.PlaySequence(overrideSettings, allowFading)};
                 case AudioGroupPlayMode.SequentialChained:
-                    return new[] {audioGroup.PlaySequenceChained(overrideSettings)};
-                case AudioGroupPlayMode.Random: return new[] {Play(audioGroup.GetRandom(), overrideSettings)};
-                case AudioGroupPlayMode.Simultaneous: return audioGroup.PlaySimultaneous(overrideSettings);
-                case AudioGroupPlayMode.SimultaneousSync: break;
+                    return new[] {audioGroup.PlaySequenceChained(overrideSettings, allowFading)};
+                case AudioGroupPlayMode.Random: return new[] {Play(audioGroup.GetRandom(), overrideSettings, allowFading)};
+                case AudioGroupPlayMode.Simultaneous: return audioGroup.PlaySimultaneous(overrideSettings, allowFading);
+                case AudioGroupPlayMode.SimultaneousSync:
+                    return audioGroup.PlaySimultaneousSync(overrideSettings, allowFading);
             }
 
             return null;
@@ -57,12 +58,13 @@ namespace LegendaryTools.Bragi
         {
             switch (playMode)
             {
-                case AudioGroupPlayMode.Sequential: return new[] {audioGroup.PlaySequence(position, overrideSettings)};
+                case AudioGroupPlayMode.Sequential: return new[] {audioGroup.PlaySequence(position, overrideSettings, allowFading)};
                 case AudioGroupPlayMode.SequentialChained:
-                    return new[] {audioGroup.PlaySequenceChained(position, overrideSettings)};
-                case AudioGroupPlayMode.Random: return new[] {Play(position, audioGroup.GetRandom(), overrideSettings)};
-                case AudioGroupPlayMode.Simultaneous: return audioGroup.PlaySimultaneous(position, overrideSettings);
-                case AudioGroupPlayMode.SimultaneousSync: break;
+                    return new[] {audioGroup.PlaySequenceChained(position, overrideSettings, allowFading)};
+                case AudioGroupPlayMode.Random: return new[] {Play(position, audioGroup.GetRandom(), overrideSettings, allowFading)};
+                case AudioGroupPlayMode.Simultaneous: return audioGroup.PlaySimultaneous(position, overrideSettings, allowFading);
+                case AudioGroupPlayMode.SimultaneousSync:
+                    return audioGroup.PlaySimultaneousSync(position, overrideSettings, allowFading);
             }
 
             return null;
@@ -73,12 +75,13 @@ namespace LegendaryTools.Bragi
         {
             switch (playMode)
             {
-                case AudioGroupPlayMode.Sequential: return new[] {audioGroup.PlaySequence(parent, overrideSettings)};
+                case AudioGroupPlayMode.Sequential: return new[] {audioGroup.PlaySequence(parent, overrideSettings, allowFading)};
                 case AudioGroupPlayMode.SequentialChained:
-                    return new[] {audioGroup.PlaySequenceChained(parent, overrideSettings)};
-                case AudioGroupPlayMode.Random: return new[] {Play(parent, audioGroup.GetRandom(), overrideSettings)};
-                case AudioGroupPlayMode.Simultaneous: return audioGroup.PlaySimultaneous(parent, overrideSettings);
-                case AudioGroupPlayMode.SimultaneousSync: break;
+                    return new[] {audioGroup.PlaySequenceChained(parent, overrideSettings, allowFading)};
+                case AudioGroupPlayMode.Random: return new[] {Play(parent, audioGroup.GetRandom(), overrideSettings, allowFading)};
+                case AudioGroupPlayMode.Simultaneous: return audioGroup.PlaySimultaneous(parent, overrideSettings, allowFading);
+                case AudioGroupPlayMode.SimultaneousSync:
+                    return audioGroup.PlaySimultaneousSync(parent, overrideSettings, allowFading);
             }
 
             return null;

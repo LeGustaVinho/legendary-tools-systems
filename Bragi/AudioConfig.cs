@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
-using LegendaryTools.Systems.ScreenFlow;
-using Sirenix.OdinInspector;
+using LegendaryTools.Systems.AssetProvider;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -61,64 +59,18 @@ namespace LegendaryTools.Bragi
         }
     }
 
+    [Serializable]
+    public class AssetLoadableAudioClip : AssetLoadable<AudioClip>
+    {
+        
+    }
+    
     [CreateAssetMenu(menuName = "Tools/Bragi/AudioConfig")]
     public class AudioConfig : AudioConfigBase
     {
-        [Header("Loading")] public bool DontUnloadAfterLoad;
-        public AssetProvider LoadingStrategy;
-        public bool UseAsyncLoading;
-        public AudioClip HardReference;
-        public string[] WeakReference;
-
+        public AssetLoadableAudioClip AssetLoadable;
         public AudioSettings AudioSettings;
-
-        public bool IsLoaded => loadedAudioClip != null;
-
-        public bool IsLoading { private set; get; }
         
-        public AudioClip LoadedAudioClip => loadedAudioClip;
-        AudioClip loadedAudioClip;
-
-        public IEnumerator Load()
-        {
-            if (HardReference != null)
-            {
-                loadedAudioClip = HardReference;
-                yield break;
-            }
-
-            if (LoadingStrategy != null)
-            {
-                if (UseAsyncLoading)
-                {
-                    IsLoading = true;
-                    yield return LoadingStrategy.LoadAsync<AudioClip>(WeakReference, OnLoadAssetAsync);
-                }
-                else
-                {
-                    loadedAudioClip = LoadingStrategy.Load<AudioClip>(WeakReference);
-                }
-            }
-            else
-            {
-                Debug.LogError("[AudioConfig:Load] -> LoadingStrategy is null");
-            }
-        }
-
-        void OnLoadAssetAsync(AudioClip audioClip)
-        {
-            loadedAudioClip = audioClip;
-            IsLoading = false;
-        }
-
-        public void Unload()
-        {
-            if (loadedAudioClip != null && LoadingStrategy != null)
-            {
-                LoadingStrategy.Unload(ref loadedAudioClip);
-            }
-        }
-
         public override AudioHandler[] Play(AudioSettings overrideSettings = null, bool allowFading = true)
         {
             return new[] {Bragi.Instance.Play(this, overrideSettings, allowFading)};
@@ -133,13 +85,14 @@ namespace LegendaryTools.Bragi
         {
             return new[] {Bragi.Instance.Play(parent, this, overrideSettings, allowFading)};
         }
-
-        #if UNITY_EDITOR
+        
+#if UNITY_EDITOR
         [ContextMenu("ClearLoadedRef")]
         public void ClearLoadedRef()
         {
-            loadedAudioClip = null;
+            AssetLoadable.Unload();
+            AssetLoadable.ClearLoadedAssetRef();
         }
-        #endif
+#endif
     }
 }

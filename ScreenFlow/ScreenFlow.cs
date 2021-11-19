@@ -244,7 +244,7 @@ namespace LegendaryTools.Systems.ScreenFlow
                 if (!uiEntitiesLookup.ContainsKey(screenInScene.Config.name))
                 {
                     uiEntitiesLookup.Add(screenInScene.Config.name, screenInScene.Config);
-                    screenInScene.Config.SetAsSceneAsset(screenInScene.ScreenInstance);
+                    screenInScene.Config.AssetLoadable.SetAsSceneAsset(screenInScene.ScreenInstance);
                 }
                 else
                 {
@@ -257,7 +257,7 @@ namespace LegendaryTools.Systems.ScreenFlow
                 if (!uiEntitiesLookup.ContainsKey(popupInScene.Config.name))
                 {
                     uiEntitiesLookup.Add(popupInScene.Config.name, popupInScene.Config);
-                    popupInScene.Config.SetAsSceneAsset(popupInScene.PopupInstance);
+                    popupInScene.Config.AssetLoadable.SetAsSceneAsset(popupInScene.PopupInstance);
                 }
                 else
                 {
@@ -404,8 +404,8 @@ namespace LegendaryTools.Systems.ScreenFlow
         private void Preload()
         {
             preloadQueue.Clear();
-            preloadQueue.AddRange(Array.FindAll(Config.Screens, item => item.PreLoad));
-            preloadQueue.AddRange(Array.FindAll(Config.Popups, item => item.PreLoad));
+            preloadQueue.AddRange(Array.FindAll(Config.Screens, item => item.AssetLoadable.PreLoad));
+            preloadQueue.AddRange(Array.FindAll(Config.Popups, item => item.AssetLoadable.PreLoad));
 
             preloadRoutine = StartCoroutine(PreloadingAssets());
         }
@@ -414,7 +414,7 @@ namespace LegendaryTools.Systems.ScreenFlow
         {
             foreach (var uiEntityBaseConfig in preloadQueue)
             {
-                yield return uiEntityBaseConfig.Load();
+                yield return uiEntityBaseConfig.AssetLoadable.Load();
             }
 
             preloadRoutine = null;
@@ -423,9 +423,9 @@ namespace LegendaryTools.Systems.ScreenFlow
         private IEnumerator ScreenTransitTo(ScreenConfig screenConfig, bool isMoveBack = false,
             System.Object args = null)
         {
-            if (!screenConfig.IsLoaded)
+            if (!screenConfig.AssetLoadable.IsLoaded)
             {
-                if (!screenConfig.IsLoading) //Prevents loading, because the asset is being loaded in the preload routine 
+                if (!screenConfig.AssetLoadable.IsLoading) //Prevents loading, because the asset is being loaded in the preload routine 
                 {
                     if (preloadQueue.Contains(screenConfig)) //Check if it is in the preloading queue 
                     {
@@ -433,7 +433,7 @@ namespace LegendaryTools.Systems.ScreenFlow
                     }
 
                     //Schedule the new screen to load in the background
-                    nextScreenLoading = StartCoroutine(screenConfig.Load());
+                    nextScreenLoading = StartCoroutine(screenConfig.AssetLoadable.Load());
                 }
             }
 
@@ -449,7 +449,7 @@ namespace LegendaryTools.Systems.ScreenFlow
                         //Wait for hide's animation to complete
                         yield return CurrentScreenInstance.Hide(args);
 
-                        if (CurrentScreenConfig.IsInScene)
+                        if (CurrentScreenConfig.AssetLoadable.IsInScene)
                         {
                             //Screen is serialized on scene, no need to destroy or unload, so just set it disabled
                             CurrentScreenInstance.gameObject.SetActive(false);
@@ -458,9 +458,9 @@ namespace LegendaryTools.Systems.ScreenFlow
                         {
                             Destroy(CurrentScreenInstance.gameObject);
 
-                            if (!CurrentScreenConfig.DontUnloadAfterLoad)
+                            if (!CurrentScreenConfig.AssetLoadable.DontUnloadAfterLoad)
                             {
-                                CurrentScreenConfig.Unload();
+                                CurrentScreenConfig.AssetLoadable.Unload();
                             }
                         }
 
@@ -480,20 +480,20 @@ namespace LegendaryTools.Systems.ScreenFlow
                 yield return nextScreenLoading; //Wait for the new screen to load completely if it hasn't loaded yet
                 nextScreenLoading = null;
             }
-            else if (!screenConfig.IsLoaded) //The asset is probably still being loaded in the preload routine.
+            else if (!screenConfig.AssetLoadable.IsLoaded) //The asset is probably still being loaded in the preload routine.
             {
-                yield return new WaitUntil(() => screenConfig.IsLoaded); //Waits for the asset to be fully loaded into the preload routine 
+                yield return new WaitUntil(() => screenConfig.AssetLoadable.IsLoaded); //Waits for the asset to be fully loaded into the preload routine 
             }
 
             ScreenBase newScreenInstance;
-            if (screenConfig.IsInScene)
+            if (screenConfig.AssetLoadable.IsInScene)
             {
-                newScreenInstance = screenConfig.LoadedScreen;
+                newScreenInstance = screenConfig.AssetLoadable.LoadedAsset;
                 newScreenInstance.gameObject.SetActive(true);
             }
             else
             {
-                newScreenInstance = InstantiateUIElement<ScreenBase>(screenConfig.LoadedScreen,
+                newScreenInstance = InstantiateUIElement<ScreenBase>(screenConfig.AssetLoadable.LoadedAsset,
                     rectTransform, out RectTransform instanceRT, out RectTransform prefabRT);
             }
 
@@ -517,7 +517,7 @@ namespace LegendaryTools.Systems.ScreenFlow
             if (hideScreenRoutine != null) //If we were waiting for hide's animation
             {
                 yield return hideScreenRoutine; //Wait for hide's animation to complete
-                if (CurrentScreenConfig.IsInScene)
+                if (CurrentScreenConfig.AssetLoadable.IsInScene)
                 {
                     //Screen is serialized on scene, no need to destroy or unload, so just set it disabled
                     CurrentScreenInstance.gameObject.SetActive(false); 
@@ -526,9 +526,9 @@ namespace LegendaryTools.Systems.ScreenFlow
                 {
                     Destroy(CurrentScreenInstance.gameObject);
 
-                    if (!CurrentScreenConfig.DontUnloadAfterLoad)
+                    if (!CurrentScreenConfig.AssetLoadable.DontUnloadAfterLoad)
                     {
-                        CurrentScreenConfig.Unload();
+                        CurrentScreenConfig.AssetLoadable.Unload();
                     }
                 }
                 hideScreenRoutine = null;
@@ -562,9 +562,9 @@ namespace LegendaryTools.Systems.ScreenFlow
 
         private IEnumerator PopupTransitTo(PopupConfig popupConfig, System.Object args = null)
         {
-            if (!popupConfig.IsLoaded)
+            if (!popupConfig.AssetLoadable.IsLoaded)
             {
-                newPopupLoading = StartCoroutine(popupConfig.Load());
+                newPopupLoading = StartCoroutine(popupConfig.AssetLoadable.Load());
             }
 
             if (CurrentPopupConfig != null)
@@ -606,9 +606,9 @@ namespace LegendaryTools.Systems.ScreenFlow
             
             PopupBase newPopup = null;
             Canvas canvasPopup = null;
-            if (popupConfig.IsInScene)
+            if (popupConfig.AssetLoadable.IsInScene)
             {
-                newPopup = popupConfig.LoadedScreen as PopupBase;
+                newPopup = popupConfig.AssetLoadable.LoadedAsset as PopupBase;
                 canvasPopup = GetComponentInParent<Canvas>();
                 if (canvasPopup == null)
                 {
@@ -618,18 +618,18 @@ namespace LegendaryTools.Systems.ScreenFlow
             }
             else
             {
-                canvasPopup = GetCanvas(popupConfig.LoadedScreen); //Check if the prefab popup has any canvas, if it does, we don't need to instantiate a new canvas
+                canvasPopup = GetCanvas(popupConfig.AssetLoadable.LoadedAsset); //Check if the prefab popup has any canvas, if it does, we don't need to instantiate a new canvas
                 
                 if (canvasPopup != null)
                 {
                     //Instantiate the popup from the prefab (and it already has canvas =D) 
-                    newPopup = InstantiateUIElement<ScreenBase>(popupConfig.LoadedScreen, null,
+                    newPopup = InstantiateUIElement<ScreenBase>(popupConfig.AssetLoadable.LoadedAsset, null,
                         out RectTransform instanceRT, out RectTransform prefabRT) as PopupBase;
                 }
                 else
                 {
                     //Instantiate the popup from the prefab
-                    newPopup = InstantiateUIElement<ScreenBase>(popupConfig.LoadedScreen, null,
+                    newPopup = InstantiateUIElement<ScreenBase>(popupConfig.AssetLoadable.LoadedAsset, null,
                         out RectTransform instanceRT, out RectTransform prefabRT) as PopupBase;
 
                     //Instantiate new canvas to hold popup
@@ -732,7 +732,7 @@ namespace LegendaryTools.Systems.ScreenFlow
 
             popupInstance.OnClosePopupRequest -= OnClosePopupRequest;
 
-            if (popupConfig.IsInScene)
+            if (popupConfig.AssetLoadable.IsInScene)
             {
                 popupInstance.gameObject.SetActive(false);
             }
@@ -740,9 +740,9 @@ namespace LegendaryTools.Systems.ScreenFlow
             {
                 Destroy(popupInstance.gameObject);
 
-                if (!popupConfig.DontUnloadAfterLoad)
+                if (!popupConfig.AssetLoadable.DontUnloadAfterLoad)
                 {
-                    popupConfig.Unload();
+                    popupConfig.AssetLoadable.Unload();
                 }
             }
         }

@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace LegendaryTools.Bragi
 {
@@ -34,6 +33,12 @@ namespace LegendaryTools.Bragi
         {
             get => audioSource.timeSamples;
             set => audioSource.timeSamples = value;
+        }
+
+        public float Pitch
+        {
+            get => audioSource.pitch;
+            set => audioSource.pitch = value;
         }
 
         public event Action<AudioHandler> OnPlay;
@@ -104,8 +109,8 @@ namespace LegendaryTools.Bragi
             Settings = settings;
             ApplyAudioSettingsToSource(audioSource, settings);
             IsInitialized = true;
-            
-            if (Config.IsLoaded)
+
+            if (Config.AssetLoadable.IsLoaded)
             {
                 OnAudioLoaded();
             }
@@ -115,9 +120,28 @@ namespace LegendaryTools.Bragi
             }
         }
 
+        [ContextMenu("Play")]
         public void Play()
         {
-            UnPause();
+            Play(0);
+        }
+
+        public void Play(float fadeTime = 0)
+        {
+            audioSource.Play();
+
+            if (AllowFading)
+            {
+                if (Settings.FadeInDuration > 0 || fadeTime > 0)
+                {
+                    audioSource.volume = 0;
+                    fadeRoutine = CoroutineManager.Instance.StartCoroutine(FadeVolume(0, Settings.Volume,
+                        fadeTime > 0 ? fadeTime : Settings.FadeInDuration));
+                }
+            }
+
+            playingRoutine = CoroutineManager.Instance.StartCoroutine(WaitAudioFinish());
+            OnPlay?.Invoke(this);
         }
 
         /// <summary>
@@ -130,6 +154,7 @@ namespace LegendaryTools.Bragi
             Dispose();
         }
         
+        [ContextMenu("Stop")]
         public void Stop()
         {
             Stop(0);
@@ -156,6 +181,7 @@ namespace LegendaryTools.Bragi
             }
         }
 
+        [ContextMenu("Pause")]
         public void Pause()
         {
             audioSource.Pause();
@@ -163,6 +189,7 @@ namespace LegendaryTools.Bragi
             OnPause?.Invoke(this, true);
         }
         
+        [ContextMenu("UnPause")]
         public void UnPause()
         {
             audioSource.UnPause();
@@ -170,12 +197,14 @@ namespace LegendaryTools.Bragi
             OnPause?.Invoke(this, false);
         }
         
+        [ContextMenu("Mute")]
         public void Mute()
         {
             audioSource.mute = true;
             OnMute?.Invoke(this, true);
         }
         
+        [ContextMenu("UnMute")]
         public void UnMute()
         {
             audioSource.mute = false;
@@ -184,21 +213,11 @@ namespace LegendaryTools.Bragi
 
         private void OnAudioLoaded()
         {
-            audioSource.clip = Config.LoadedAudioClip;
-            audioSource.Play();
+            audioSource.clip = Config.AssetLoadable.LoadedAsset;
 
-            if (AllowFading && Settings.FadeInDuration > 0)
+            if (!IsPaused)
             {
-                audioSource.volume = 0;
-                fadeRoutine = CoroutineManager.Instance.StartCoroutine(FadeVolume(0, Settings.Volume, Settings.FadeInDuration, NotifyPlay));
-            }
-
-            NotifyPlay();
-
-            void NotifyPlay()
-            {
-                playingRoutine = CoroutineManager.Instance.StartCoroutine(WaitAudioFinish());
-                OnPlay?.Invoke(this);
+                Play();
             }
         }
         
@@ -213,15 +232,15 @@ namespace LegendaryTools.Bragi
         
         private IEnumerator WaitAudioLoad(Action onAudioLoadCompleted)
         {
-            if (!Config.IsLoaded)
+            if (!Config.AssetLoadable.IsLoaded)
             {
-                if (!Config.IsLoading) //Prevents loading, because the asset is being loaded
+                if (!Config.AssetLoadable.IsLoading) //Prevents loading, because the asset is being loaded
                 {
-                    yield return Config.Load();
+                    yield return Config.AssetLoadable.Load();
                 }
                 else
                 {
-                    yield return new WaitUntil(() => Config.IsLoaded);
+                    yield return new WaitUntil(() => Config.AssetLoadable.IsLoaded);
                 }
             }
             
@@ -275,7 +294,7 @@ namespace LegendaryTools.Bragi
                 {
                     if (Settings.FadeOutDuration > 0)
                     {
-                        if (Time >= Config.LoadedAudioClip.length - Settings.FadeOutDuration)
+                        if (Time >= Config.AssetLoadable.LoadedAsset.length - Settings.FadeOutDuration)
                         {
                             if (fadeRoutine == null)
                             {
@@ -292,13 +311,12 @@ namespace LegendaryTools.Bragi
         {
             OnDispose?.Invoke(this);
             
-            if (!Config.DontUnloadAfterLoad)
+            if (!Config.AssetLoadable.DontUnloadAfterLoad)
             {
-                Config.Unload();
+                Config.AssetLoadable.Unload();
             }
 
-            Pool.Destroy(audioSource);
-            Pool.Dispose(this);
+            Pool.Destroy(this);
         }
 
         private void EnsureHasAudioSource()

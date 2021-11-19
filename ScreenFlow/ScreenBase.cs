@@ -31,6 +31,7 @@ namespace LegendaryTools.Systems.ScreenFlow
         public BackKeyBehaviourOverride BackKeyBehaviourOverride = BackKeyBehaviourOverride.Inherit;
 
         public abstract IEnumerator Show(System.Object args);
+
         public abstract IEnumerator Hide(System.Object args);
     }
 }

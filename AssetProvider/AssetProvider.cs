@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-namespace LegendaryTools.Systems.ScreenFlow
+namespace LegendaryTools.Systems.AssetProvider
 {
     public abstract class AssetProvider : ScriptableObject
     {

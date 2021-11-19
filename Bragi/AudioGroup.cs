@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 namespace LegendaryTools.Bragi
@@ -74,9 +75,9 @@ namespace LegendaryTools.Bragi
         public AudioHandler[] PlaySimultaneous(AudioSettings overrideSettings = null, bool allowFading = true)
         {
             AudioHandler[] handlers = new AudioHandler[Audios.Length];
-            foreach (AudioWeight audioData in Audios)
+            for(int i = 0; i < Audios.Length; i++)
             {
-                Bragi.Instance.Play(audioData.AudioConfig, overrideSettings, allowFading);
+                handlers[i] = Bragi.Instance.Play(Audios[i].AudioConfig, overrideSettings, allowFading);
             }
             return handlers;
         }
@@ -84,9 +85,9 @@ namespace LegendaryTools.Bragi
         public AudioHandler[] PlaySimultaneous(Vector3 position, AudioSettings overrideSettings = null, bool allowFading = true)
         {
             AudioHandler[] handlers = new AudioHandler[Audios.Length];
-            foreach (AudioWeight audioData in Audios)
+            for(int i = 0; i < Audios.Length; i++)
             {
-                Bragi.Instance.Play(position, audioData.AudioConfig, overrideSettings, allowFading);
+                Bragi.Instance.Play(position, Audios[i].AudioConfig, overrideSettings, allowFading);
             }
             return handlers;
         }
@@ -94,16 +95,84 @@ namespace LegendaryTools.Bragi
         public AudioHandler[] PlaySimultaneous(Transform parent, AudioSettings overrideSettings = null, bool allowFading = true)
         {
             AudioHandler[] handlers = new AudioHandler[Audios.Length];
-            foreach (AudioWeight audioData in Audios)
+            for(int i = 0; i < Audios.Length; i++)
             {
-                Bragi.Instance.Play(parent, audioData.AudioConfig, overrideSettings, allowFading);
+                Bragi.Instance.Play(parent, Audios[i].AudioConfig, overrideSettings, allowFading);
             }
             return handlers;
         }
         
+        public AudioHandler[] PlaySimultaneousSync(AudioSettings overrideSettings = null, bool allowFading = true)
+        {
+            AudioHandler[] handlers = new AudioHandler[Audios.Length];
+            
+            for(int i = 0; i < Audios.Length; i++)
+            {
+                handlers[i] = Bragi.Instance.Play(Audios[i].AudioConfig, overrideSettings, allowFading);
+                handlers[i].Pause();
+            }
+            
+            CoroutineManager.Instance.StartCoroutine(SynchronizeAudioSettings(handlers));
+            return handlers;
+        }
+
+        public AudioHandler[] PlaySimultaneousSync(Vector3 position, AudioSettings overrideSettings = null, bool allowFading = true)
+        {
+            AudioHandler[] handlers = new AudioHandler[Audios.Length];
+            
+            for(int i = 0; i < Audios.Length; i++)
+            {
+                handlers[i] = Bragi.Instance.Play(position, Audios[i].AudioConfig, overrideSettings, allowFading);
+                handlers[i].Pause();
+            }
+            
+            CoroutineManager.Instance.StartCoroutine(SynchronizeAudioSettings(handlers));
+            return handlers;
+        }
+        
+        public AudioHandler[] PlaySimultaneousSync(Transform parent, AudioSettings overrideSettings = null, bool allowFading = true)
+        {
+            AudioHandler[] handlers = new AudioHandler[Audios.Length];
+            
+            for(int i = 0; i < Audios.Length; i++)
+            {
+                handlers[i] = Bragi.Instance.Play(parent, Audios[i].AudioConfig, overrideSettings, allowFading);
+                handlers[i].Pause();
+            }
+            
+            CoroutineManager.Instance.StartCoroutine(SynchronizeAudioSettings(handlers));
+            return handlers;
+        }
+
         public AudioConfig GetRandom()
         {
             return Audios.GetRandomWeight().AudioConfig;
+        }
+
+        private IEnumerator SynchronizeAudioSettings(AudioHandler[] audioHandlers)
+        {
+            yield return new WaitUntil(() => audioHandlers.All(item => item.Config.AssetLoadable.IsLoaded));
+            
+            float sum = 0;
+            foreach (AudioHandler handler in audioHandlers)
+            {
+                try
+                {
+                    sum += handler.TimeSamples;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+            }
+            
+            float avgLength = sum / (float) audioHandlers.Length;
+            
+            foreach (AudioHandler handler in audioHandlers)
+            {
+                handler.TimeSamples = (int) avgLength;
+                handler.Play();
+            }
         }
 
         private AudioHandler ProcessSequenceChained(ref AudioHandler handler)

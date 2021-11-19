@@ -1,18 +1,15 @@
-using System;
 using System.Collections.Generic;
-using Sirenix.OdinInspector;
+using UnityEngine;
+using Random = System.Random;
 
 namespace LegendaryTools.Bragi
 {
     public class Jukebox : SingletonBehaviour<Jukebox>, IPlayable
     {
         public JukeboxConfig Config;
-
-        [ShowInInspector]
+        
         public bool IsMuted => currentHandlers?.Any(item => item.IsMuted) ?? false;
-        [ShowInInspector]
         public bool IsPlaying => currentHandlers?.Any(item => item.IsPlaying) ?? false;
-        [ShowInInspector]
         public bool IsPaused => currentHandlers?.Any(item => item.IsPaused) ?? false;
 
         private List<AudioConfigBase> randomOrderTracks;
@@ -20,7 +17,7 @@ namespace LegendaryTools.Bragi
         private AudioHandler[] currentHandlers;
         private readonly Random rnGod = new Random();
         
-        [Button]
+        [ContextMenu("Play")]
         public void Play()
         {
             switch (Config.PlayMode)
@@ -50,7 +47,7 @@ namespace LegendaryTools.Bragi
             }
         }
 
-        [Button]
+        [ContextMenu("Next")]
         public void Next()
         {
             StopNowAllCurrentHandlers();
@@ -58,7 +55,7 @@ namespace LegendaryTools.Bragi
             Play();
         }
         
-        [Button]
+        [ContextMenu("Prev")]
         public void Prev()
         {
             StopNowAllCurrentHandlers();
@@ -70,7 +67,7 @@ namespace LegendaryTools.Bragi
             Play();
         }
 
-        [Button]
+        [ContextMenu("Stop")]
         public void Stop()
         {
             foreach (AudioHandler audioHandler in currentHandlers)
@@ -82,7 +79,7 @@ namespace LegendaryTools.Bragi
             }
         }
 
-        [Button]
+        [ContextMenu("Pause")]
         public void Pause()
         {
             foreach (AudioHandler audioHandler in currentHandlers)
@@ -94,7 +91,7 @@ namespace LegendaryTools.Bragi
             }
         }
 
-        [Button]
+        [ContextMenu("UnPause")]
         public void UnPause()
         {
             foreach (AudioHandler audioHandler in currentHandlers)
@@ -106,7 +103,7 @@ namespace LegendaryTools.Bragi
             }
         }
 
-        [Button]
+        [ContextMenu("Mute")]
         public void Mute()
         {
             foreach (AudioHandler audioHandler in currentHandlers)
@@ -118,7 +115,7 @@ namespace LegendaryTools.Bragi
             }
         }
 
-        [Button]
+        [ContextMenu("UnMute")]
         public void UnMute()
         {
             foreach (AudioHandler audioHandler in currentHandlers)
