@@ -18,7 +18,6 @@ namespace LegendaryTools.Bragi
         SequentialChained,
         Random,
         Simultaneous,
-        SimultaneousSync //TODO
     }
 
     [CreateAssetMenu(menuName = "Tools/Bragi/AudioGroup")]
@@ -99,48 +98,6 @@ namespace LegendaryTools.Bragi
             {
                 Bragi.Instance.Play(parent, Audios[i].AudioConfig, overrideSettings, allowFading);
             }
-            return handlers;
-        }
-        
-        public AudioHandler[] PlaySimultaneousSync(AudioSettings overrideSettings = null, bool allowFading = true)
-        {
-            AudioHandler[] handlers = new AudioHandler[Audios.Length];
-            
-            for(int i = 0; i < Audios.Length; i++)
-            {
-                handlers[i] = Bragi.Instance.Play(Audios[i].AudioConfig, overrideSettings, allowFading);
-                handlers[i].Pause();
-            }
-            
-            CoroutineManager.Instance.StartCoroutine(SynchronizeAudioSettings(handlers));
-            return handlers;
-        }
-
-        public AudioHandler[] PlaySimultaneousSync(Vector3 position, AudioSettings overrideSettings = null, bool allowFading = true)
-        {
-            AudioHandler[] handlers = new AudioHandler[Audios.Length];
-            
-            for(int i = 0; i < Audios.Length; i++)
-            {
-                handlers[i] = Bragi.Instance.Play(position, Audios[i].AudioConfig, overrideSettings, allowFading);
-                handlers[i].Pause();
-            }
-            
-            CoroutineManager.Instance.StartCoroutine(SynchronizeAudioSettings(handlers));
-            return handlers;
-        }
-        
-        public AudioHandler[] PlaySimultaneousSync(Transform parent, AudioSettings overrideSettings = null, bool allowFading = true)
-        {
-            AudioHandler[] handlers = new AudioHandler[Audios.Length];
-            
-            for(int i = 0; i < Audios.Length; i++)
-            {
-                handlers[i] = Bragi.Instance.Play(parent, Audios[i].AudioConfig, overrideSettings, allowFading);
-                handlers[i].Pause();
-            }
-            
-            CoroutineManager.Instance.StartCoroutine(SynchronizeAudioSettings(handlers));
             return handlers;
         }
 

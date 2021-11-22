@@ -46,8 +46,6 @@ namespace LegendaryTools.Bragi
                     return new[] {audioGroup.PlaySequenceChained(overrideSettings, allowFading)};
                 case AudioGroupPlayMode.Random: return new[] {Play(audioGroup.GetRandom(), overrideSettings, allowFading)};
                 case AudioGroupPlayMode.Simultaneous: return audioGroup.PlaySimultaneous(overrideSettings, allowFading);
-                case AudioGroupPlayMode.SimultaneousSync:
-                    return audioGroup.PlaySimultaneousSync(overrideSettings, allowFading);
             }
 
             return null;
@@ -63,8 +61,6 @@ namespace LegendaryTools.Bragi
                     return new[] {audioGroup.PlaySequenceChained(position, overrideSettings, allowFading)};
                 case AudioGroupPlayMode.Random: return new[] {Play(position, audioGroup.GetRandom(), overrideSettings, allowFading)};
                 case AudioGroupPlayMode.Simultaneous: return audioGroup.PlaySimultaneous(position, overrideSettings, allowFading);
-                case AudioGroupPlayMode.SimultaneousSync:
-                    return audioGroup.PlaySimultaneousSync(position, overrideSettings, allowFading);
             }
 
             return null;
@@ -80,8 +76,6 @@ namespace LegendaryTools.Bragi
                     return new[] {audioGroup.PlaySequenceChained(parent, overrideSettings, allowFading)};
                 case AudioGroupPlayMode.Random: return new[] {Play(parent, audioGroup.GetRandom(), overrideSettings, allowFading)};
                 case AudioGroupPlayMode.Simultaneous: return audioGroup.PlaySimultaneous(parent, overrideSettings, allowFading);
-                case AudioGroupPlayMode.SimultaneousSync:
-                    return audioGroup.PlaySimultaneousSync(parent, overrideSettings, allowFading);
             }
 
             return null;
