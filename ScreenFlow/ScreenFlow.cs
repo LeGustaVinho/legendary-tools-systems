@@ -3,14 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using Object = UnityEngine.Object;
 
 namespace LegendaryTools.Systems.ScreenFlow
 {
     public class EntityArgPair<T>
     {
-        public T Entity;
-        public System.Object Args;
+        public readonly T Entity;
+        public readonly System.Object Args;
 
         public EntityArgPair(T uiEntity, object args)
         {
@@ -24,22 +23,6 @@ namespace LegendaryTools.Systems.ScreenFlow
         Trigger,
         MoveBack,
         ClosePopup
-    }
-    
-    public struct ScreenFlowCommand
-    {
-        public readonly ScreenFlowCommandType Type;
-        public readonly UnityEngine.Object Object;
-        public readonly System.Object Args;
-        public Action<ScreenBase> OnCompleted;
-
-        public ScreenFlowCommand(ScreenFlowCommandType type, Object o, object args, Action<ScreenBase> onCompleted = null)
-        {
-            Type = type;
-            Object = o;
-            Args = args;
-            OnCompleted = onCompleted;
-        }
     }
 
     [Serializable]
