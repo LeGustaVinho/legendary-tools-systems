@@ -26,17 +26,19 @@ namespace LegendaryTools.Systems.ScreenFlow
         ClosePopup
     }
     
-    public class ScreenFlowCommand
+    public struct ScreenFlowCommand
     {
-        public ScreenFlowCommandType Type;
-        public UnityEngine.Object Object;
-        public System.Object Args;
+        public readonly ScreenFlowCommandType Type;
+        public readonly UnityEngine.Object Object;
+        public readonly System.Object Args;
+        public Action<ScreenBase> OnCompleted;
 
-        public ScreenFlowCommand(ScreenFlowCommandType type, Object o, object args)
+        public ScreenFlowCommand(ScreenFlowCommandType type, Object o, object args, Action<ScreenBase> onCompleted = null)
         {
             Type = type;
             Object = o;
             Args = args;
+            OnCompleted = onCompleted;
         }
     }
 
@@ -111,26 +113,26 @@ namespace LegendaryTools.Systems.ScreenFlow
         private CanvasScaler canvasScaler;
         private GraphicRaycaster graphicRaycaster;
 
-        public void SendTrigger(string name, System.Object args = null, bool enqueue = false)
+        public void SendTrigger(string name, System.Object args = null, bool enqueue = false, Action<ScreenBase> onCompleted = null)
         {
             if (uiEntitiesLookup.TryGetValue(name, out UIEntityBaseConfig uiEntityBaseConfig))
             {
-                SendTrigger(uiEntityBaseConfig, args, enqueue);
+                SendTrigger(uiEntityBaseConfig, args, enqueue, onCompleted);
             }
         }
 
-        public void SendTrigger(UIEntityBaseConfig uiEntity, System.Object args = null, bool enqueue = false)
+        public void SendTrigger(UIEntityBaseConfig uiEntity, System.Object args = null, bool enqueue = false, Action<ScreenBase> onCompleted = null)
         {
             if (!IsTransiting)
             {
-                commandQueue.Add(new ScreenFlowCommand(ScreenFlowCommandType.Trigger, uiEntity, args));
+                commandQueue.Add(new ScreenFlowCommand(ScreenFlowCommandType.Trigger, uiEntity, args, onCompleted));
                 transitionRoutine = StartCoroutine(ProcessCommandQueue());
             }
             else
             {
                 if (enqueue)
                 {
-                    commandQueue.Add(new ScreenFlowCommand(ScreenFlowCommandType.Trigger, uiEntity, args));
+                    commandQueue.Add(new ScreenFlowCommand(ScreenFlowCommandType.Trigger, uiEntity, args, onCompleted));
                 }
             }
         }
@@ -279,7 +281,7 @@ namespace LegendaryTools.Systems.ScreenFlow
                     {
                         if (next.Object is ScreenConfig screenConfig)
                         {
-                            yield return ScreenTransitTo(screenConfig, false, next.Args);
+                            yield return ScreenTransitTo(screenConfig, false, next.Args, next.OnCompleted);
                         }
                         else if (next.Object is PopupConfig popupConfig)
                         {
@@ -287,7 +289,7 @@ namespace LegendaryTools.Systems.ScreenFlow
                             {
                                 if (CurrentScreenConfig.AllowPopups)
                                 {
-                                    yield return PopupTransitTo(popupConfig, next.Args);
+                                    yield return PopupTransitTo(popupConfig, next.Args, next.OnCompleted);
                                 }
                             }
                         }
@@ -295,12 +297,12 @@ namespace LegendaryTools.Systems.ScreenFlow
                     }
                     case ScreenFlowCommandType.MoveBack:
                     {
-                        yield return MoveBackOp(next.Args);
+                        yield return MoveBackOp(next.Args, next.OnCompleted);
                         break;
                     }
                     case ScreenFlowCommandType.ClosePopup:
                     {
-                        yield return  ClosePopupOp(next.Object as PopupBase, next.Args);
+                        yield return  ClosePopupOp(next.Object as PopupBase, next.Args, next.OnCompleted);
                         break;
                     }
                 }
@@ -309,7 +311,7 @@ namespace LegendaryTools.Systems.ScreenFlow
             transitionRoutine = null;
         }
 
-        private IEnumerator MoveBackOp(System.Object args)
+        private IEnumerator MoveBackOp(System.Object args, Action<ScreenBase> onCompleted = null)
         {
             EntityArgPair<ScreenConfig> previousScreenConfig = screensHistory.Count > 1 ? screensHistory[screensHistory.Count - 2] : null;
             if (previousScreenConfig != null)
@@ -317,12 +319,12 @@ namespace LegendaryTools.Systems.ScreenFlow
                 if (CurrentScreenConfig.CanMoveBackFromHere && previousScreenConfig.Entity.CanMoveBackToHere)
                 {
                     yield return ScreenTransitTo(previousScreenConfig.Entity, 
-                        true, args ?? previousScreenConfig.Args);
+                        true, args ?? previousScreenConfig.Args, onCompleted);
                 }
             }
         }
         
-        private IEnumerator ClosePopupOp(PopupBase popupBase, System.Object args)
+        private IEnumerator ClosePopupOp(PopupBase popupBase, System.Object args, Action<ScreenBase> onCompleted = null)
         {
             int stackIndex = popupInstancesStack.FindIndex(item => item == popupBase);
 
@@ -396,6 +398,8 @@ namespace LegendaryTools.Systems.ScreenFlow
                 {
                     DisposePopupFromHide(popupConfig, popupBase);
                 }
+                
+                onCompleted?.Invoke(behindPopupInstance);
             }
 
             popupTransitionRoutine = null;
@@ -421,7 +425,7 @@ namespace LegendaryTools.Systems.ScreenFlow
         }
 
         private IEnumerator ScreenTransitTo(ScreenConfig screenConfig, bool isMoveBack = false,
-            System.Object args = null)
+            System.Object args = null, Action<ScreenBase> onCompleted = null)
         {
             if (!screenConfig.AssetLoadable.IsLoaded)
             {
@@ -558,9 +562,10 @@ namespace LegendaryTools.Systems.ScreenFlow
             }
 
             screenTransitionRoutine = null;
+            onCompleted?.Invoke(newScreenInstance);
         }
 
-        private IEnumerator PopupTransitTo(PopupConfig popupConfig, System.Object args = null)
+        private IEnumerator PopupTransitTo(PopupConfig popupConfig, System.Object args = null, Action<ScreenBase> onCompleted = null)
         {
             if (!popupConfig.AssetLoadable.IsLoaded)
             {
@@ -682,6 +687,7 @@ namespace LegendaryTools.Systems.ScreenFlow
             popupInstancesStack.Add(newPopup);
 
             popupTransitionRoutine = null;
+            onCompleted?.Invoke(newPopup);
         }
 
         private void OnClosePopupRequest(PopupBase popupToClose)
