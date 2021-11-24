@@ -9,7 +9,7 @@ namespace LegendaryTools.Bragi
         public Bragi()
         {
             audioHandlerPrefab = new GameObject("PoolableAudioSource").AddComponent<AudioHandler>();
-            audioHandlerPrefab.hideFlags = HideFlags.HideAndDontSave;
+            audioHandlerPrefab.gameObject.hideFlags = HideFlags.HideAndDontSave;
             Object.DontDestroyOnLoad(audioHandlerPrefab);
         }
 

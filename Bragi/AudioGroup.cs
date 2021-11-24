@@ -106,32 +106,6 @@ namespace LegendaryTools.Bragi
             return Audios.GetRandomWeight().AudioConfig;
         }
 
-        private IEnumerator SynchronizeAudioSettings(AudioHandler[] audioHandlers)
-        {
-            yield return new WaitUntil(() => audioHandlers.All(item => item.Config.AssetLoadable.IsLoaded));
-            
-            float sum = 0;
-            foreach (AudioHandler handler in audioHandlers)
-            {
-                try
-                {
-                    sum += handler.TimeSamples;
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
-            }
-            
-            float avgLength = sum / (float) audioHandlers.Length;
-            
-            foreach (AudioHandler handler in audioHandlers)
-            {
-                handler.TimeSamples = (int) avgLength;
-                handler.Play();
-            }
-        }
-
         private AudioHandler ProcessSequenceChained(ref AudioHandler handler)
         {
             handler.OnFinished += PlayNext;
