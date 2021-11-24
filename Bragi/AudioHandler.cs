@@ -85,19 +85,19 @@ namespace LegendaryTools.Bragi
 
             if (playingRoutine != null)
             {
-                CoroutineManager.Instance.StopCoroutine(playingRoutine);
+                MonoBehaviourFacade.Instance.StopCoroutine(playingRoutine);
                 playingRoutine = null;
             }
             
             if (loadingRoutine != null)
             {
-                CoroutineManager.Instance.StopCoroutine(loadingRoutine);
+                MonoBehaviourFacade.Instance.StopCoroutine(loadingRoutine);
                 loadingRoutine = null;
             }
             
             if (fadeRoutine != null)
             {
-                CoroutineManager.Instance.StopCoroutine(fadeRoutine);
+                MonoBehaviourFacade.Instance.StopCoroutine(fadeRoutine);
                 fadeRoutine = null;
             }
         }
@@ -116,7 +116,7 @@ namespace LegendaryTools.Bragi
             }
             else
             {
-                loadingRoutine = CoroutineManager.Instance.StartCoroutine(WaitAudioLoad(OnAudioLoaded));
+                loadingRoutine = MonoBehaviourFacade.Instance.StartCoroutine(WaitAudioLoad(OnAudioLoaded));
             }
         }
 
@@ -135,12 +135,12 @@ namespace LegendaryTools.Bragi
                 if (Settings.FadeInDuration > 0 || fadeTime > 0)
                 {
                     audioSource.volume = 0;
-                    fadeRoutine = CoroutineManager.Instance.StartCoroutine(FadeVolume(0, Settings.Volume,
+                    fadeRoutine = MonoBehaviourFacade.Instance.StartCoroutine(FadeVolume(0, Settings.Volume,
                         fadeTime > 0 ? fadeTime : Settings.FadeInDuration));
                 }
             }
 
-            playingRoutine = CoroutineManager.Instance.StartCoroutine(WaitAudioFinish());
+            playingRoutine = MonoBehaviourFacade.Instance.StartCoroutine(WaitAudioFinish());
             OnPlay?.Invoke(this);
         }
 
@@ -170,7 +170,7 @@ namespace LegendaryTools.Bragi
             {
                 if (AllowFading)
                 {
-                    fadeRoutine = CoroutineManager.Instance.StartCoroutine(
+                    fadeRoutine = MonoBehaviourFacade.Instance.StartCoroutine(
                         FadeVolume(audioSource.volume, 0,
                             fadeTime > 0 ? fadeTime : Settings.FadeOutDuration, StopNow));
                 }
@@ -298,7 +298,7 @@ namespace LegendaryTools.Bragi
                         {
                             if (fadeRoutine == null)
                             {
-                                fadeRoutine = CoroutineManager.Instance.StartCoroutine(
+                                fadeRoutine = MonoBehaviourFacade.Instance.StartCoroutine(
                                     FadeVolume(audioSource.volume, 0, Settings.FadeOutDuration));
                             }
                         }
