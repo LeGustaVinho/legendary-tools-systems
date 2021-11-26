@@ -25,6 +25,11 @@ namespace LegendaryTools.Bragi
         TriggerStay,
         TriggerExit,
         
+        Start,
+        OnDestroy,
+        OnEnable,
+        OnDisable,
+
         Custom
     }
 
@@ -140,7 +145,26 @@ namespace LegendaryTools.Bragi
             Initialize();
         }
 
-        private void Initialize()
+        protected virtual void Start()
+        {
+            ProcessTrigger(AudioTriggerType.Start);
+        }
+        protected virtual void OnDestroy()
+        {
+            ProcessTrigger(AudioTriggerType.OnDestroy);
+        }
+        
+        protected virtual void OnEnable()
+        {
+            ProcessTrigger(AudioTriggerType.OnEnable);
+        }
+        
+        protected virtual void OnDisable()
+        {
+            ProcessTrigger(AudioTriggerType.OnDisable);
+        }
+
+        protected virtual void Initialize()
         {
             audioConfigTriggerTable.Clear();
             customAudioConfigTriggerTable.Clear();
