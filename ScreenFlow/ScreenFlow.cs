@@ -96,66 +96,71 @@ namespace LegendaryTools.Systems.ScreenFlow
         private CanvasScaler canvasScaler;
         private GraphicRaycaster graphicRaycaster;
 
-        public void SendTrigger(string name, System.Object args = null, bool enqueue = false, Action<ScreenBase> onCompleted = null)
+        public void SendTrigger(string name, System.Object args = null, bool enqueue = false, 
+            Action<ScreenBase> onShow = null, Action<ScreenBase> onHide = null)
         {
             if (uiEntitiesLookup.TryGetValue(name, out UIEntityBaseConfig uiEntityBaseConfig))
             {
-                SendTrigger(uiEntityBaseConfig, args, enqueue, onCompleted);
+                SendTrigger(uiEntityBaseConfig, args, enqueue, onShow, onHide);
             }
         }
 
-        public void SendTrigger(UIEntityBaseConfig uiEntity, System.Object args = null, bool enqueue = false, Action<ScreenBase> onCompleted = null)
+        public void SendTrigger(UIEntityBaseConfig uiEntity, System.Object args = null, bool enqueue = false, 
+            Action<ScreenBase> onShow = null, Action<ScreenBase> onHide = null)
         {
+            ScreenFlowCommand command = new ScreenFlowCommand(ScreenFlowCommandType.Trigger, uiEntity, args, onShow, onHide);
             if (!IsTransiting)
             {
-                commandQueue.Add(new ScreenFlowCommand(ScreenFlowCommandType.Trigger, uiEntity, args, onCompleted));
+                commandQueue.Add(command);
                 transitionRoutine = StartCoroutine(ProcessCommandQueue());
             }
             else
             {
                 if (enqueue)
                 {
-                    commandQueue.Add(new ScreenFlowCommand(ScreenFlowCommandType.Trigger, uiEntity, args, onCompleted));
+                    commandQueue.Add(command);
                 }
             }
         }
 
-        public void MoveBack(System.Object args = null, bool enqueue = false)
+        public void MoveBack(System.Object args = null, bool enqueue = false, Action<ScreenBase> onShow = null, Action<ScreenBase> onHide = null)
         {
+            ScreenFlowCommand command = new ScreenFlowCommand(ScreenFlowCommandType.MoveBack, null, args, onShow, onHide);
             if (!IsTransiting)
             {
-                commandQueue.Add(new ScreenFlowCommand(ScreenFlowCommandType.MoveBack, null, args));
+                commandQueue.Add(command);
                 transitionRoutine = StartCoroutine(ProcessCommandQueue());
             }
             else
             {
                 if (enqueue)
                 {
-                    commandQueue.Add(new ScreenFlowCommand(ScreenFlowCommandType.MoveBack, null, args));
+                    commandQueue.Add(command);
                 }
             }
         }
 
-        public void CloseForegroundPopup(System.Object args = null, bool enqueue = false)
+        public void CloseForegroundPopup(System.Object args = null, bool enqueue = false, Action<ScreenBase> onShow = null, Action<ScreenBase> onHide = null)
         {
             if (CurrentPopupInstance != null)
             {
-                ClosePopup(CurrentPopupInstance, args, enqueue);
+                ClosePopup(CurrentPopupInstance, args, enqueue, onShow, onHide);
             }
         }
 
-        public void ClosePopup(PopupBase popupBase, System.Object args = null, bool enqueue = false)
+        public void ClosePopup(PopupBase popupBase, System.Object args = null, bool enqueue = false, Action<ScreenBase> onShow = null, Action<ScreenBase> onHide = null)
         {
+            var command = new ScreenFlowCommand(ScreenFlowCommandType.ClosePopup, popupBase, args, onShow, onHide);
             if (!IsTransiting)
             {
-                commandQueue.Add(new ScreenFlowCommand(ScreenFlowCommandType.ClosePopup, popupBase, args));
+                commandQueue.Add(command);
                 transitionRoutine = StartCoroutine(ProcessCommandQueue());
             }
             else
             {
                 if (enqueue)
                 {
-                    commandQueue.Add(new ScreenFlowCommand(ScreenFlowCommandType.ClosePopup, popupBase, args));
+                    commandQueue.Add(command);
                 }
             }
         }
@@ -264,7 +269,7 @@ namespace LegendaryTools.Systems.ScreenFlow
                     {
                         if (next.Object is ScreenConfig screenConfig)
                         {
-                            yield return ScreenTransitTo(screenConfig, false, next.Args, next.OnCompleted);
+                            yield return ScreenTransitTo(screenConfig, false, next.Args, next.OnShow, next.OnHide);
                         }
                         else if (next.Object is PopupConfig popupConfig)
                         {
@@ -272,7 +277,7 @@ namespace LegendaryTools.Systems.ScreenFlow
                             {
                                 if (CurrentScreenConfig.AllowPopups)
                                 {
-                                    yield return PopupTransitTo(popupConfig, next.Args, next.OnCompleted);
+                                    yield return PopupTransitTo(popupConfig, next.Args, next.OnShow, next.OnHide);
                                 }
                             }
                         }
@@ -280,12 +285,12 @@ namespace LegendaryTools.Systems.ScreenFlow
                     }
                     case ScreenFlowCommandType.MoveBack:
                     {
-                        yield return MoveBackOp(next.Args, next.OnCompleted);
+                        yield return MoveBackOp(next.Args, next.OnShow, next.OnHide);
                         break;
                     }
                     case ScreenFlowCommandType.ClosePopup:
                     {
-                        yield return  ClosePopupOp(next.Object as PopupBase, next.Args, next.OnCompleted);
+                        yield return  ClosePopupOp(next.Object as PopupBase, next.Args, next.OnShow, next.OnHide);
                         break;
                     }
                 }
@@ -294,7 +299,7 @@ namespace LegendaryTools.Systems.ScreenFlow
             transitionRoutine = null;
         }
 
-        private IEnumerator MoveBackOp(System.Object args, Action<ScreenBase> onCompleted = null)
+        private IEnumerator MoveBackOp(System.Object args, Action<ScreenBase> onShow = null, Action<ScreenBase> onHide = null)
         {
             EntityArgPair<ScreenConfig> previousScreenConfig = screensHistory.Count > 1 ? screensHistory[screensHistory.Count - 2] : null;
             if (previousScreenConfig != null)
@@ -302,12 +307,13 @@ namespace LegendaryTools.Systems.ScreenFlow
                 if (CurrentScreenConfig.CanMoveBackFromHere && previousScreenConfig.Entity.CanMoveBackToHere)
                 {
                     yield return ScreenTransitTo(previousScreenConfig.Entity, 
-                        true, args ?? previousScreenConfig.Args, onCompleted);
+                        true, args ?? previousScreenConfig.Args, onShow, onHide);
                 }
             }
         }
         
-        private IEnumerator ClosePopupOp(PopupBase popupBase, System.Object args, Action<ScreenBase> onCompleted = null)
+        private IEnumerator ClosePopupOp(PopupBase popupBase, System.Object args, Action<ScreenBase> onShow = null, 
+            Action<ScreenBase> onHide = null)
         {
             int stackIndex = popupInstancesStack.FindIndex(item => item == popupBase);
 
@@ -334,6 +340,7 @@ namespace LegendaryTools.Systems.ScreenFlow
                         {
                             //Wait for hide's animation to complete
                             yield return popupBase.Hide(args);
+                            onHide?.Invoke(CurrentPopupInstance);
                             DisposePopupFromHide(popupConfig, popupBase);
                             break;
                         }
@@ -367,6 +374,7 @@ namespace LegendaryTools.Systems.ScreenFlow
                     if (hidePopupRoutine != null) //If we were waiting for hide's animation
                     {
                         yield return hidePopupRoutine; //Wait for hide's animation to complete
+                        onHide?.Invoke(CurrentPopupInstance);
                         DisposePopupFromHide(CurrentPopupConfig, CurrentPopupInstance);
                         hidePopupRoutine = null;
                     }
@@ -379,10 +387,11 @@ namespace LegendaryTools.Systems.ScreenFlow
                 }
                 else
                 {
+                    onHide?.Invoke(popupBase);
                     DisposePopupFromHide(popupConfig, popupBase);
                 }
                 
-                onCompleted?.Invoke(behindPopupInstance);
+                onShow?.Invoke(behindPopupInstance);
             }
 
             popupTransitionRoutine = null;
@@ -408,7 +417,7 @@ namespace LegendaryTools.Systems.ScreenFlow
         }
 
         private IEnumerator ScreenTransitTo(ScreenConfig screenConfig, bool isMoveBack = false,
-            System.Object args = null, Action<ScreenBase> onCompleted = null)
+            System.Object args = null, Action<ScreenBase> onShow = null, Action<ScreenBase> onHide = null)
         {
             if (!screenConfig.AssetLoadable.IsLoaded)
             {
@@ -435,6 +444,8 @@ namespace LegendaryTools.Systems.ScreenFlow
                     {
                         //Wait for hide's animation to complete
                         yield return CurrentScreenInstance.Hide(args);
+                        
+                        onHide?.Invoke(CurrentScreenInstance);
 
                         if (CurrentScreenConfig.AssetLoadable.IsInScene)
                         {
@@ -504,6 +515,8 @@ namespace LegendaryTools.Systems.ScreenFlow
             if (hideScreenRoutine != null) //If we were waiting for hide's animation
             {
                 yield return hideScreenRoutine; //Wait for hide's animation to complete
+                onHide?.Invoke(CurrentScreenInstance);
+                
                 if (CurrentScreenConfig.AssetLoadable.IsInScene)
                 {
                     //Screen is serialized on scene, no need to destroy or unload, so just set it disabled
@@ -520,7 +533,7 @@ namespace LegendaryTools.Systems.ScreenFlow
                 }
                 hideScreenRoutine = null;
             }
-
+            
             if (showScreenRoutine != null) //If we were waiting for show's animation
             {
                 yield return showScreenRoutine; //Wait for show's animation to complete
@@ -545,10 +558,10 @@ namespace LegendaryTools.Systems.ScreenFlow
             }
 
             screenTransitionRoutine = null;
-            onCompleted?.Invoke(newScreenInstance);
+            onShow?.Invoke(newScreenInstance);
         }
 
-        private IEnumerator PopupTransitTo(PopupConfig popupConfig, System.Object args = null, Action<ScreenBase> onCompleted = null)
+        private IEnumerator PopupTransitTo(PopupConfig popupConfig, System.Object args = null, Action<ScreenBase> onShow = null, Action<ScreenBase> onHide = null)
         {
             if (!popupConfig.AssetLoadable.IsLoaded)
             {
@@ -564,6 +577,7 @@ namespace LegendaryTools.Systems.ScreenFlow
                     {
                         if (CurrentScreenConfig.AllowStackablePopups && !CurrentPopupConfig.HideWhenGoingToBackground)
                         {
+                            onHide?.Invoke(CurrentPopupInstance);
                             CurrentPopupInstance.OnGoToBackground(args);
                         }
 
@@ -571,6 +585,7 @@ namespace LegendaryTools.Systems.ScreenFlow
                         {
                             //Wait for hide's animation to complete
                             yield return CurrentPopupInstance.Hide(args);
+                            onHide?.Invoke(CurrentPopupInstance);
                             DisposePopupFromHide(CurrentPopupConfig, CurrentPopupInstance);
                         }
 
@@ -653,6 +668,7 @@ namespace LegendaryTools.Systems.ScreenFlow
             if (hidePopupRoutine != null) //If we were waiting for hide's animation
             {
                 yield return hidePopupRoutine; //Wait for hide's animation to complete
+                onHide?.Invoke(CurrentPopupInstance);
                 DisposePopupFromHide(CurrentPopupConfig, CurrentPopupInstance);
                 hidePopupRoutine = null;
             }
@@ -670,7 +686,7 @@ namespace LegendaryTools.Systems.ScreenFlow
             popupInstancesStack.Add(newPopup);
 
             popupTransitionRoutine = null;
-            onCompleted?.Invoke(newPopup);
+            onShow?.Invoke(newPopup);
         }
 
         private void OnClosePopupRequest(PopupBase popupToClose)
