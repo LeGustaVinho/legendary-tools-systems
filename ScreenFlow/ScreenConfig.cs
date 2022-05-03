@@ -11,6 +11,6 @@ namespace LegendaryTools.Systems.ScreenFlow
         [Header("Behaviour")] public bool CanMoveBackFromHere;
         public bool CanMoveBackToHere;
         public BackKeyBehaviour BackKeyBehaviour = BackKeyBehaviour.ScreenMoveBack;
-        public PopupsBehaviour PopupBehaviour = PopupsBehaviour.HideFirstThenTransit;
+        public PopupsBehaviourOnScreenTransition PopupBehaviourOnScreenTransition = PopupsBehaviourOnScreenTransition.HideFirstThenTransit;
     }
 }

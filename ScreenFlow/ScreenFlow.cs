@@ -351,7 +351,9 @@ namespace LegendaryTools.Systems.ScreenFlow
                         }
                     }
 
-                    if (behindPopupInstance != null && behindPopupConfig.HideWhenGoingToBackground)
+                    if (behindPopupInstance != null && 
+                        (behindPopupConfig.GoingBackgroundBehaviour == PopupGoingBackgroundBehaviour.JustHide ||
+                         behindPopupConfig.GoingBackgroundBehaviour == PopupGoingBackgroundBehaviour.HideAndDestroy))
                     {
                         switch (popupConfig.AnimationType)
                         {
@@ -575,25 +577,46 @@ namespace LegendaryTools.Systems.ScreenFlow
                     case AnimationType.NoAnimation:
                     case AnimationType.Wait:
                     {
-                        if (CurrentScreenConfig.AllowStackablePopups && !CurrentPopupConfig.HideWhenGoingToBackground)
+                        if (CurrentScreenConfig.AllowStackablePopups)
                         {
                             onHide?.Invoke(CurrentPopupInstance);
                             CurrentPopupInstance.OnGoToBackground(args);
-                        }
 
-                        if (!CurrentScreenConfig.AllowStackablePopups || CurrentPopupConfig.HideWhenGoingToBackground)
+                            if (CurrentPopupConfig.GoingBackgroundBehaviour != PopupGoingBackgroundBehaviour.DontHide)
+                            {
+                                yield return CurrentPopupInstance.Hide(args);
+                                onHide?.Invoke(CurrentPopupInstance);
+
+                                if (CurrentPopupConfig.GoingBackgroundBehaviour ==
+                                    PopupGoingBackgroundBehaviour.HideAndDestroy)
+                                {
+                                    DisposePopupFromHide(CurrentPopupConfig, CurrentPopupInstance, CurrentPopupConfig == popupConfig);
+                                }
+                            }
+                        }
+                        else
                         {
                             //Wait for hide's animation to complete
                             yield return CurrentPopupInstance.Hide(args);
                             onHide?.Invoke(CurrentPopupInstance);
-                            DisposePopupFromHide(CurrentPopupConfig, CurrentPopupInstance);
+                            DisposePopupFromHide(CurrentPopupConfig, CurrentPopupInstance, CurrentPopupConfig == popupConfig);
                         }
 
                         break;
                     }
                     case AnimationType.Intersection:
                     {
-                        if (!CurrentScreenConfig.AllowStackablePopups || CurrentPopupConfig.HideWhenGoingToBackground)
+                        if (CurrentScreenConfig.AllowStackablePopups)
+                        {
+                            CurrentPopupInstance.OnGoToBackground(args);
+
+                            if (CurrentPopupConfig.GoingBackgroundBehaviour != PopupGoingBackgroundBehaviour.DontHide)
+                            {
+                                //Hide animation starts playing 
+                                hidePopupRoutine = StartCoroutine(CurrentPopupInstance.Hide(args));
+                            }
+                        }
+                        else
                         {
                             //Hide animation starts playing 
                             hidePopupRoutine = StartCoroutine(CurrentPopupInstance.Hide(args));
@@ -669,7 +692,13 @@ namespace LegendaryTools.Systems.ScreenFlow
             {
                 yield return hidePopupRoutine; //Wait for hide's animation to complete
                 onHide?.Invoke(CurrentPopupInstance);
-                DisposePopupFromHide(CurrentPopupConfig, CurrentPopupInstance);
+
+                if (CurrentPopupConfig.GoingBackgroundBehaviour ==
+                    PopupGoingBackgroundBehaviour.HideAndDestroy)
+                {
+                    DisposePopupFromHide(CurrentPopupConfig, CurrentPopupInstance);
+                }
+                
                 hidePopupRoutine = null;
             }
 
@@ -698,14 +727,14 @@ namespace LegendaryTools.Systems.ScreenFlow
         {
             if (CurrentPopupInstance != null)
             {
-                switch (CurrentScreenConfig.PopupBehaviour)
+                switch (CurrentScreenConfig.PopupBehaviourOnScreenTransition)
                 {
-                    case PopupsBehaviour.PreserveAllOnHide:
+                    case PopupsBehaviourOnScreenTransition.PreserveAllOnHide:
                     {
                         //Just keep going
                         break;
                     }
-                    case PopupsBehaviour.HideFirstThenTransit:
+                    case PopupsBehaviourOnScreenTransition.HideFirstThenTransit:
                     {
                         yield return ClosePopupOp(CurrentPopupInstance, args);
                         for (int i = popupConfigsStack.Count - 1; i >= 0; i--)
@@ -715,7 +744,7 @@ namespace LegendaryTools.Systems.ScreenFlow
 
                         break;
                     }
-                    case PopupsBehaviour.DestroyAllThenTransit:
+                    case PopupsBehaviourOnScreenTransition.DestroyAllThenTransit:
                     {
                         for (int i = popupConfigsStack.Count - 1; i >= 0; i--)
                         {
@@ -728,7 +757,7 @@ namespace LegendaryTools.Systems.ScreenFlow
             }
         }
 
-        private void DisposePopupFromHide(PopupConfig popupConfig, PopupBase popupInstance)
+        private void DisposePopupFromHide(PopupConfig popupConfig, PopupBase popupInstance, bool forceDontUnload = false)
         {
             //Remove current popup from stack
             popupConfigsStack.Remove(popupConfig);
@@ -747,7 +776,10 @@ namespace LegendaryTools.Systems.ScreenFlow
 
                 if (!popupConfig.AssetLoadable.DontUnloadAfterLoad)
                 {
-                    popupConfig.AssetLoadable.Unload();
+                    if (forceDontUnload == false)
+                    {
+                        popupConfig.AssetLoadable.Unload();
+                    }
                 }
             }
         }

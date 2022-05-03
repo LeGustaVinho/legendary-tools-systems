@@ -19,11 +19,18 @@ namespace LegendaryTools.Systems.ScreenFlow
         CloseFirstPopup,
     }
 
-    public enum PopupsBehaviour
+    public enum PopupsBehaviourOnScreenTransition
     {
         PreserveAllOnHide,
         HideFirstThenTransit,
         DestroyAllThenTransit,
+    }
+
+    public enum PopupGoingBackgroundBehaviour
+    {
+        DontHide,
+        JustHide,
+        HideAndDestroy,
     }
 
     [CreateAssetMenu(menuName = "Tools/ScreenFlow/ScreenFlowConfig")]
