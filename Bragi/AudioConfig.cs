@@ -1,5 +1,4 @@
 using System;
-using LegendaryTools.Systems.AssetProvider;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -58,17 +57,10 @@ namespace LegendaryTools.Bragi
             FadeOutDuration = audioSettings.FadeOutDuration;
         }
     }
-
-    [Serializable]
-    public class AssetLoadableAudioClip : AssetLoadable<AudioClip>
-    {
-        
-    }
     
-    [CreateAssetMenu(menuName = "Tools/Bragi/AudioConfig")]
-    public class AudioConfig : AudioConfigBase
+    //[CreateAssetMenu(menuName = "Tools/Bragi/AudioConfig")]
+    public abstract class AudioConfig : AudioConfigBaseAssetLoader
     {
-        public AssetLoadableAudioClip AssetLoadable;
         public AudioSettings AudioSettings;
         
         public override AudioHandler[] Play(AudioSettings overrideSettings = null, bool allowFading = true)
@@ -90,8 +82,8 @@ namespace LegendaryTools.Bragi
         [ContextMenu("ClearLoadedRef")]
         public void ClearLoadedRef()
         {
-            AssetLoadable.Unload();
-            AssetLoadable.ClearLoadedAssetRef();
+            Unload();
+            ClearLoadedAssetRef();
         }
 #endif
     }

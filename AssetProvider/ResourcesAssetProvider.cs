@@ -7,21 +7,23 @@ namespace LegendaryTools.Systems.AssetProvider
     [CreateAssetMenu(menuName = "Tools/ScreenFlow/ResourcesAssetProvider")]
     public class ResourcesAssetProvider : AssetProvider
     {
-        public override T Load<T>(string[] args)
+        public override T Load<T>(object arg)
         {
-            if (args.Length > 0)
+            string path = (string)arg;
+            if (path.Length > 0)
             {
-                return Resources.Load<T>(args[0]);
+                return Resources.Load<T>(path);
             }
 
             return null;
         }
 
-        public override IEnumerator LoadAsync<T>(string[] args, Action<T> onComplete)
+        public override IEnumerator LoadAsync<T>(object arg, Action<T> onComplete)
         {
-            if (args.Length > 0)
+            string path = (string)arg;
+            if (path.Length > 0)
             {
-                ResourceRequest resourcesRequest = Resources.LoadAsync<T>(args[0]);
+                ResourceRequest resourcesRequest = Resources.LoadAsync<T>(path);
 
                 while (!resourcesRequest.isDone)
                 {

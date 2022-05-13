@@ -5,34 +5,63 @@ using Object = UnityEngine.Object;
 
 namespace LegendaryTools.Systems.AssetProvider
 {
-    public interface IAssetLoaderConfig<T> where T : Object
+    public interface IAssetLoaderConfig
     {
+        public bool PreLoad { get; set; }
+        public bool DontUnloadAfterLoad { get; set; }
+
+        public AssetProvider LoadingStrategy { get; set; }
+        public object AssetReference { get; }
+        
         bool IsInScene { get; } //Flag used to identify that this asset does not need load/unload because it is serialized in the scene
-        T LoadedAsset { get; }
+        UnityEngine.Object LoadedAsset { get; }
         bool IsLoaded { get; }
         bool IsLoading { get; }
         IEnumerator Load();
         void Unload();
+        void SetAsSceneAsset(UnityEngine.Object sceneInstanceInScene);
+        public void ClearLoadedAssetRef();
+    }
+    
+    public interface IAssetLoaderConfig<T, W> : IAssetLoaderConfig
+        where T : UnityEngine.Object
+    {
+        new W AssetReference { get; }
+        new T LoadedAsset { get; }
         void SetAsSceneAsset(T sceneInstanceInScene);
     }
 
-    public class AssetLoadableConfig<T> : ScriptableObject
-        where T: UnityEngine.Object
-    {
-        public AssetLoadable<T> AssetLoadable;
-    }
-
     [Serializable]
-    public class AssetLoadable<T> : IAssetLoaderConfig<T>
+    public class AssetLoadable<T, W> : IAssetLoaderConfig<T, W>
         where T: UnityEngine.Object
     {
-        [Header("Loading")] public bool PreLoad;
-        public bool DontUnloadAfterLoad;
+        [SerializeField] private bool _preload;
+        [SerializeField] private bool _dontUnloadAfterLoad;
+        [SerializeField] private AssetProvider _loadingStrategy;
+        [SerializeField] private W _assetReference;
+        
+        public bool PreLoad
+        {
+            get => _preload;
+            set => _preload = value;
+        }
+        public bool DontUnloadAfterLoad 
+        {
+            get => _dontUnloadAfterLoad;
+            set => _dontUnloadAfterLoad = value;
+        }
 
-        public AssetProvider LoadingStrategy;
-        public bool UseAsyncLoading;
-        public T HardReference;
-        public string[] WeakReference;
+        public AssetProvider LoadingStrategy
+        {
+            get => _loadingStrategy;
+            set => _loadingStrategy = value;
+        }
+        
+        object IAssetLoaderConfig.AssetReference => AssetReference;
+        Object IAssetLoaderConfig.LoadedAsset => LoadedAsset;
+        
+        public W AssetReference => _assetReference;
+
         public bool IsInScene { private set; get; } //Flag used to identify that this asset does not need load/unload because it is serialized in the scene
 
         public T LoadedAsset => loadedAsset;
@@ -49,24 +78,11 @@ namespace LegendaryTools.Systems.AssetProvider
             {
                 yield break;
             }
-            
-            if (HardReference != null)
-            {
-                loadedAsset = HardReference;
-                yield break;
-            }
 
             if (LoadingStrategy != null)
             {
-                if (UseAsyncLoading)
-                {
-                    IsLoading = true;
-                    yield return LoadingStrategy.LoadAsync<T>(WeakReference, OnLoadAssetAsync);
-                }
-                else
-                {
-                    loadedAsset = LoadingStrategy.Load<T>(WeakReference);
-                }
+                IsLoading = true;
+                yield return LoadingStrategy.LoadAsync<T>(AssetReference, OnLoadAssetAsync);
             }
             else
             {
@@ -84,7 +100,12 @@ namespace LegendaryTools.Systems.AssetProvider
                 }
             }
         }
-        
+
+        public void SetAsSceneAsset(Object sceneInstanceInScene)
+        {
+            SetAsSceneAsset(sceneInstanceInScene as T);
+        }
+
         public void SetAsSceneAsset(T sceneInstanceInScene)
         {
             IsInScene = sceneInstanceInScene != null;

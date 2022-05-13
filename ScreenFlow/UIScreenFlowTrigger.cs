@@ -13,8 +13,6 @@ namespace LegendaryTools.Systems.ScreenFlow
     public class UIScreenFlowTrigger : MonoBehaviour
     {
         public ScreenFlowTriggerMode Mode = ScreenFlowTriggerMode.Trigger;
-
-        public ScreenFlowConfig ScreenFlowConfig;
         public UIEntityBaseConfig UiEntity;
         public bool Enqueue;
         
